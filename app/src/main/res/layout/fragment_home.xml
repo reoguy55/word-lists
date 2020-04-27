@@ -14,6 +14,13 @@
         app:layout_constraintTop_toTopOf="@+id/text_home"
         tools:layout_editor_absoluteX="190dp">
 
+        <TextView
+            android:id="@+id/resultText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            tools:visibility="gone" />
+
         <EditText
             android:id="@+id/wordEntry"
             android:layout_width="match_parent"
