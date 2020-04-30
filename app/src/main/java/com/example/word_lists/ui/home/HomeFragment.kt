@@ -1,7 +1,11 @@
 package com.example.word_lists.ui.home
 
+import android.graphics.Color
 import android.os.Bundle
+import android.text.Layout
 import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,12 +21,10 @@ import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.example.word_lists.Entry
-import com.example.word_lists.MainActivity
 import com.example.word_lists.R
-import com.google.gson.Gson
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
-import java.sql.SQLOutput
+import com.example.word_lists.ThesaurusEntry
+import com.example.word_lists.Vocab
+import com.fasterxml.jackson.module.kotlin.*
 
 class HomeFragment : Fragment() {
 
@@ -37,7 +39,7 @@ class HomeFragment : Fragment() {
             ViewModelProviders.of(this).get(HomeViewModel::class.java)
         val root = inflater.inflate(R.layout.fragment_home, container, false)
         val textView: TextView = root.findViewById(R.id.text_home)
-        homeViewModel.text.observe(this, Observer {
+        homeViewModel.text.observe(viewLifecycleOwner, Observer {
             textView.text = it
         })
         textView.visibility = View.GONE
@@ -45,50 +47,70 @@ class HomeFragment : Fragment() {
         val wordEntry: EditText = root.findViewById(R.id.wordEntry)
         val wordList: LinearLayout = root.findViewById(R.id.wordList)
         val queue = Volley.newRequestQueue(context)
-        val url = "https://dictionaryapi.com/api/v3/references/collegiate/json/"
+        val dictBase = "https://dictionaryapi.com/api/v3/references/collegiate/json/"
+        val thesBase = "https://dictionaryapi.com/api/v3/references/thesaurus/json/"
         val dictKey = context?.getString(R.string.dict_api_key)
-//        val thesKey = context?.getString(R.string.thes_api_key)
+        val thesKey = context?.getString(R.string.thes_api_key)
         val resultText: TextView = root.findViewById(R.id.resultText)
-        addButton.setOnClickListener { unused ->
+        addButton.setOnClickListener {
             if (wordEntry.text.toString() != "") {
-                val dictURL = url + wordEntry.text.toString() + "?key=" + dictKey
-                //send request here
-                val stringRequest = StringRequest(Request.Method.GET, dictURL,
-                    Response.Listener { response ->
-                        // Display the first 500 characters of the response string.
-//                        resultText.text = "Response is: ${response.substring(0, 500)}"
-                        val gson = Gson()
-//                        System.out.println("first character of response: " + response[0])
-                        Log.d("response", response)
-                        val trim1 = response.substring(1)
-//                        System.out.println("first character of trim1: " + trim1[0])
-//                        System.out.println("last character of trim1: " + trim1[trim1.length - 1])
-                        val trim2 = trim1.substring(0, trim1.length - 1)
-                        System.out.println(trim2)
-//                        System.out.println("first character of trim2: " + trim2[0])
-//                        System.out.println("last character of trim2: " + trim2[trim2.length - 1])
-//                        System.out.println(trim2)
-//                        val result: String = gson.toJson(trim2)
-//                        val newEntry = gson.fromJson(result, Entry::class.java)
-//                        resultText.text = "Request successful!\n${newEntry}"
-//                        resultText.visibility = View.VISIBLE
-//                        val layoutParams = LinearLayout.LayoutParams(
-//                            LinearLayout.LayoutParams.MATCH_PARENT,
-//                            LinearLayout.LayoutParams.WRAP_CONTENT)
-//                        val newWord = TextView(context)
-//                        newWord.layoutParams = layoutParams
-////                newWord.setLayoutParams(layoutParams)
-////                newWord.text = wordEntry.text
-//                        newWord.text = newEntry.info.hw
-//                        wordList.addView(newWord)
-//                        wordEntry.setText("")
-                    },
-                    Response.ErrorListener {
+                val thesURL = thesBase + wordEntry.text.toString() + "?key=" + thesKey
+                val thesRequest = StringRequest(Request.Method.GET, thesURL,
+                Response.Listener { response ->
+                    val trim1 = response.substring(1)
+                    val trim2 = trim1.substring(0, trim1.length - 1)
+                    val mapper = jacksonObjectMapper()
+                    val thesEntry: ThesaurusEntry = mapper.readValue(trim2)
+                    Log.d("thesResponse", response)
+                    Log.d("syns", thesEntry.meta.toString())
+                    val syn0 = thesEntry.meta?.syns?.get(0)?.getOrElse(0) {"N/A"} ?: "N/A"
+                    val syn1 = thesEntry.meta?.syns?.get(0)?.getOrElse(1) {"N/A"} ?: "N/A"
+                    val syn2 = thesEntry.meta?.syns?.get(0)?.getOrElse(2) {"N/A"} ?: "N/A"
+                    val dictURL = dictBase + wordEntry.text.toString() + "?key=" + dictKey
+                    //send dict request here
+                    val stringRequest = StringRequest(Request.Method.GET, dictURL,
+                        Response.Listener { response ->
+                            Log.d( "response", response)
+                            val trim3 = response.substring(1)
+                            val trim4 = trim3.substring(0, trim3.length - 1)
+                            val mapper = jacksonObjectMapper()
+                            val entry: Entry = mapper.readValue(trim4)
+                            var displayText = "Request successful!\n${entry}\n"
+                            displayText += "\nSynonyms: ${syn0}, ${syn1}, ${syn2}"
+                            resultText.text = displayText
+                            resultText.visibility = View.VISIBLE
+                            val myLayoutParams = LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT)
+                            val newWord = TextView(context)
+                            newWord.layoutParams = myLayoutParams
+                            newWord.visibility = View.VISIBLE
+                            newWord.setTextColor(Color.BLACK)
+                            newWord.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                            newWord.text = entry.hwi.hw?.replace("*", "")
+                            newWord.gravity = Gravity.CENTER
+                            wordList.addView(newWord)
+                            wordEntry.setText("")
+//                            Log.d("childCount", wordList.childCount.toString())
+//                            if (wordList.getChildAt(0) is TextView) {
+//                                val child1 = wordList.getChildAt(0) as TextView
+//                                Log.d("childText", child1.text.toString())
+//                            }
+                            val newVocab = Vocab(entry, thesEntry)
+
+                        },
+                        Response.ErrorListener {
+                            resultText.text = "Request failed! Try another word!"
+                            resultText.visibility = View.VISIBLE
+                            wordEntry.setText("")
+                        })
+                    queue.add(stringRequest)
+                }, Response.ErrorListener {
                         resultText.text = "Request failed! Try another word!"
                         resultText.visibility = View.VISIBLE
                         wordEntry.setText("")
-                    })
-                queue.add(stringRequest)
+                })
+                queue.add(thesRequest)
             }
         }
         return root

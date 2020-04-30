@@ -2,35 +2,37 @@ package com.example.word_lists
 
 import com.google.gson.annotations.SerializedName
 import java.util.regex.Pattern
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 data class Entry (
 
-    @SerializedName("hwi")
-    val info: HeadWordInformation,
-//    val word: this.info.hw
-    @SerializedName("shortdef")
-    val definitions: Array<String>,
-    @SerializedName("syns")
-    val synonyms: Synonyms,
-    @SerializedName("prs")
-    val prons: Pronunciations
-//    val audioTag: String
+    @JsonProperty("hwi")
+    val hwi: HeadWordInformation,
+    @JsonProperty("shortdef")
+    val definitions: List<Any>?,
+//    @JsonProperty("syns")
+//    val synonyms: Synonyms?,
+    @JsonProperty("prs")
+    val prons: Pronunciations?,
+    @JsonAnySetter
+    var properties: Map<String, Any>?
 ) {
     override fun toString(): String {
-        val syn0 = synonyms.pt?.getOrElse(0) {"None Found!"}
-        val syn1 = synonyms.pt?.getOrElse(1) {""}
-        val syn2 = synonyms.pt?.getOrElse(2) {""}
-        return "Word: ${this.info.hw}\nDefinition: ${this.definitions[0]}\nSynonyms: ${syn0}, ${syn1}, ${syn2}"
+//        val syn0 = synonyms?.pt?.getOrElse(0) {"None Found!"}
+//        val syn1 = synonyms?.pt?.getOrElse(1) {""}
+//        val syn2 = synonyms?.pt?.getOrElse(2) {""}
+        return "Word: ${this.hwi.hw?.replace("*", "")}\nDefinition: ${this.definitions?.get(0)}"
     }
 
     fun getSoundFileURL(): String {
-        var subDir = ""
-        val audioTag = prons.sound?.audio
-        if (audioTag == null) {
-            return ""
-        }
-        subDir = when {
-            audioTag?.startsWith("bix", true) -> {
+        val audioTag: String = prons?.sound?.audio ?: ""
+        val subDir = when {
+            audioTag.startsWith("bix", true) -> {
                 "bix"
             }
             audioTag.startsWith("gg", true) -> {
