@@ -8,10 +8,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import java.io.Serializable
 
 data class ThesaurusEntry (
     @JsonProperty("meta")
     var meta: Synonyms?,
     @JsonAnySetter
     var properties: Map<String, Any>?
-)
+) : Serializable
