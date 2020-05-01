@@ -13,6 +13,8 @@ Our app restricts input words to those defined in the [Merriam Webster Collegiat
 
 It was slightly difficult to use these dictionary and thesaurus APIs due to the obtuse documentation and unformatted test JSON. This effect was amplified by difficulties we had when trying to parse JSON in our app. Coming from a Java background, we initially attempted to use Gson to parse the JSON response from the Merriam Webster APIs. This ended up being more complex that anticipated and required the use of carefully structured data classes and several deprecated libraries.
 
+It was interesting and informative to see nullability in practice. This was especially prominent while parsing JSON responses that might not have contained a certain field so we had to make sure to account for that as a possibility when organizing our data.
+
 We resorted to using Jackson for parsing instead. Although the initial switch was confusing, it was simple to start parsing once we had configured the appropriate `Serializable` data classes. We ended up having a hierarchy of data classes to represent each vocabulary word. 
 
 The term itself is represented by the **Vocab** class which contains two members: an instance of **Entry** and **ThesaurusEntry**. Each of these members is a separate data class to store the result of different API requests.
@@ -30,3 +32,7 @@ We managed to accomplish most of the goals we set out for this project, but ther
 1) We wanted to store the user's list using SQL so that it could persist between apps, but this was too challenging.
 2) Some of the UI properties were difficult to wrangle. Specifically, the gravity property for several text boxes and the layout weights of buttons.
 3) Although we did correctly parse the URL for each word's sound file we did not actually implement sound in the app. This would probably be the highest-priority goal if we continue to improve this app.
+
+Below is a GIF of a brief app demo. The GIF is at 5FPS so it looks choppy, but the app itself runs smoothly on our Android Studio emulators.
+
+![Gif failed to load](https://github.com/reoguy55/word-lists/blob/master/demo.gif)
